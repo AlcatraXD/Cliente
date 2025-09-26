@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
+<title>Manicure - Clientes & Serviços</title>
+
+<!-- Meta tags para uma experiência de App Nativo -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#d81b60">
+
+<!-- Ícone para AppsGeyser -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💅</text></svg>">
+
+<style>
+  :root{
+    --rose:#d81b60; --rose-dark:#ad1457; --ok:#2e7d32; --bad:#c62828;
+    --bg:#f0f2f5; --card:#fff; --text:#333; --muted:#666; --shadow:0 2px 8px rgba(0,0,0,.09);
+    --safe-area-inset-top: env(safe-area-inset-top);
+    --safe-area-inset-bottom: env(safe-area-inset-bottom);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent;}
+  html{scroll-behavior:smooth; height: 100%;}
+  body{
+    margin:0; background:var(--bg); color:var(--text);
+    font-family:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+  ::-webkit-scrollbar { display: none; }
+
+  /* Tela de Carregamento (Splash Screen) */
+  #loader {
+    position: fixed; inset: 0; z-index: 9999;
+    background: var(--bg); display: flex;
+    align-items: center; justify-content: center;
+    transition: opacity 0.3s ease;
+  }
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #ddd;
+    border-top-color: var(--rose);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  header{
+    background:var(--rose);color:#fff;text-align:center;padding:14px 12px;font-weight:700;
+    box-shadow:var(--shadow); position: relative; padding-top: max(14px, env(safe-area-inset-top));
+  }
+  .menu-toggle {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+    margin: 0;
+    width: auto;
+  }
+  nav{
+    position:sticky;top:0;background:#fff;z-index:50;display:flex;box-shadow:var(--shadow);
+    padding-bottom: env(safe-area-inset-top);
+  }
+  nav button{
+    flex:1;background:transparent;border:none;padding:12px;font-weight:600;cursor:pointer;
+    color:var(--muted);transition:all .2s ease; font-size: 0.9rem;
+    touch-action: manipulation;
+  }
+  nav button.active{color:var(--rose);border-bottom:3px solid var(--rose)}
+  main{padding:12px;max-width:620px;margin:0 auto; padding-bottom: calc(12px + env(safe-area-inset-bottom));}
+  h2{margin:16px 0 8px;color:var(--rose);font-size:1.05rem}
+  input,button,select,textarea{
+    width:100%;padding:12px;border-radius:10px;border:1px solid #ddd;font-size:1rem;margin:4px 0;
+    font-family: inherit;
+  }
+  input:focus, select:focus, textarea:focus{outline:none;border-color:var(--rose);box-shadow:0 0 0 2px #d81b6022}
+  button{
+    background:var(--rose);color:#fff;border:none;cursor:pointer;font-weight:600;
+    transition:all .2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    touch-action: manipulation;
+    min-height: 44px;
+  }
+  button:hover{background:var(--rose-dark)}
+  button.clean{background:var(--card);color:var(--rose);border:1px solid var(--rose)}
+  button.clean:hover{background:#fdecf4}
+  button:active{transform: scale(0.98); opacity: 0.9;}
+  /* Otimização: Botão desabilitado mantém a cor, mas fica transparente */
+  button:disabled { opacity: 0.6; cursor: not-allowed; }
+  button svg { width: 1em; height: 1em; }
+
+  section{display:none} section.active{display:block}
+  .row{display:flex;gap:8px;flex-wrap:wrap} .row>*{flex:1 1 140px}
+  .list{display:flex;flex-direction:column;gap:10px}
+  .card{
+    background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:12px;
+    transition: transform 0.2s;
+  }
+  .card:active {
+    transform: scale(0.98);
+  }
+  .client{display:flex;flex-direction:column;gap:6px}
+  .client .name{font-weight:700} .client .meta{color:var(--muted);font-size:.95rem}
+  .actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .actions button{flex:1; min-width: 90px; flex-basis: 120px; padding: 11px;}
+
+  .service-item { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; }
+  .service-item .info { flex-grow: 1; }
+  .service-item .actions { margin-top: 0; flex-shrink: 0; }
+
+  .kpi{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+  .tile{background:var(--card);border-radius:12px;box-shadow:var(--shadow);padding:12px;text-align:center}
+  .tile h3{margin:0 0 6px;color:var(--muted);font-size:.9rem;font-weight:600}
+  .tile p{margin:0;font-size:1.2rem;font-weight:800;color:var(--rose)}
+  .empty{padding:16px;text-align:center;color:var(--muted);background:var(--card);border-radius:12px;}
+  .ok{background:var(--ok)!important} .danger{background:var(--bad)!important}
+
+  .modal{
+    position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;
+    justify-content:center;padding:10px;z-index:100;opacity:0;visibility:hidden;transition:opacity .2s, visibility .2s;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+  .modal.show{opacity:1;visibility:visible}
+  .modal-content{
+    background:#fff;width:100%;max-width:520px;border-radius:16px 16px 12px 12px;
+    box-shadow:0 -5px 30px rgba(0,0,0,.2);padding:14px;max-height:86vh;overflow:auto;
+    transform:translateY(20px);transition:transform .25s ease-out;
+  }
+  .modal.show .modal-content{transform:translateY(0)}
+  .modal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .modal-head h3{margin:0;color:#444}
+  .modal-close{
+    background:transparent;border:none;font-size:1.6rem;color:var(--rose);line-height:1;
+    padding:4px 8px;cursor:pointer; min-height: auto; width: auto;
+  }
+  .opt{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed #eee}
+  .opt:last-child{border-bottom:none}
+
+  .toast{
+    position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.8);
+    color:white;padding:10px 20px;border-radius:20px;z-index:200;font-size:0.9rem;
+    opacity:0;visibility:hidden;transition:all .3s ease;
+    bottom: calc(20px + env(safe-area-inset-bottom));
+  }
+  .toast.show{opacity:1;visibility:visible;bottom: calc(30px + env(safe-area-inset-bottom))}
+
+  /* Menu lateral para mobile */
+  .side-menu {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100%;
+    background: white;
+    z-index: 150;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.2);
+    transition: left 0.3s ease;
+    padding: 20px;
+    padding-top: max(20px, env(safe-area-inset-top));
+    overflow-y: auto;
+  }
+  .side-menu.open {
+    left: 0;
+  }
+  .overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 140;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+  }
+  .overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+  .menu-item {
+    display: block;
+    padding: 15px 10px;
+    border-bottom: 1px solid #eee;
+    text-decoration: none;
+    color: #333;
+    font-weight: 500;
+  }
+  .menu-header {
+    padding: 15px 10px;
+    font-weight: bold;
+    color: var(--rose);
+    border-bottom: 2px solid var(--rose);
+    margin-bottom: 10px;
+  }
+
+  /* Melhorias para inputs em mobile */
+  input[type="date"] {
+    -webkit-appearance: none;
+    min-height: 44px;
+  }
+
+  /* Ajustes para telas muito pequenas */
+  @media (max-width: 360px) {
+    .row > * {
+      flex-basis: 100%;
+    }
+    .actions button {
+      flex-basis: calc(50% - 3px);
+    }
+    nav button {
+      font-size: 0.8rem;
+      padding: 10px 8px;
+    }
+  }
+
+  @media (min-width:560px){
+    .kpi{grid-template-columns:repeat(4, 1fr)}
+    .modal{align-items:center}
+    .modal-content{border-radius:16px;max-height:90vh}
+  }
+
+  /* Estilo para o ícone de menu hamburguer */
+  .hamburger {
+    display: inline-block;
+    width: 24px;
+    height: 18px;
+    position: relative;
+  }
+  .hamburger span {
+    display: block;
+    position: absolute;
+    height: 2px;
+    width: 100%;
+    background: white;
+    border-radius: 2px;
+    opacity: 1;
+    left: 0;
+    transform: rotate(0deg);
+    transition: .25s ease-in-out;
+  }
+  .hamburger span:nth-child(1) { top: 0px; }
+  .hamburger span:nth-child(2) { top: 8px; }
+  .hamburger span:nth-child(3) { top: 16px; }
+</style>
+</head>
+<body>
+  <div id="loader"><div class="spinner"></div></div>
+
+  <header>
+    <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menu">
+      <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </button>
+    💅 Manicure
+  </header>
+
+  <!-- Menu lateral -->
+  <div class="side-menu" id="side-menu">
+    <div class="menu-header">Navegação</div>
+    <button class="menu-item tab active" data-target="clientes">Clientes</button>
+    <button class="menu-item tab" data-target="servicos">Serviços</button>
+    <button class="menu-item tab" data-target="relatorios">Relatórios</button>
+    <div class="menu-header">Ações</div>
+    <button class="menu-item" id="export-data">Exportar Dados</button>
+    <button class="menu-item" id="import-data">Importar Dados</button>
+    <button class="menu-item" id="backup-now">Fazer Backup</button>
+  </div>
+  <div class="overlay" id="overlay"></div>
+
+  <nav>
+    <button class="tab active" data-target="clientes">Clientes</button>
+    <button class="tab" data-target="servicos">Serviços</button>
+    <button class="tab" data-target="relatorios">Relatórios</button>
+  </nav>
+
+  <main>
+    <!-- CLIENTES -->
+    <section id="clientes" class="active">
+      <h2>Novo Cliente</h2>
+      <form id="f-add-client" class="card">
+        <div class="row"><input id="in-client-name" type="text" placeholder="Nome do cliente" required /></div>
+        <div class="row"><button type="submit" id="btn-add-client"></button></div>
+      </form>
+
+      <h2>Lista de Clientes</h2>
+      <div id="client-list" class="list"><div class="empty">Nenhum cliente cadastrado.</div></div>
+    </section>
+
+    <!-- SERVIÇOS -->
+    <section id="servicos">
+      <h2>Cadastro de Serviços</h2>
+      <form id="f-add-service" class="card">
+        <div class="row">
+          <input id="in-service-name" type="text" placeholder="Nome do serviço (ex: Mão)" required />
+          <input id="in-service-price" type="number" inputmode="decimal" placeholder="Preço (R$)" step="0.01" min="0" required />
+        </div>
+        <div class="row"><button type="submit" id="btn-add-service"></button></div>
+      </form>
+
+      <h2>Serviços Cadastrados</h2>
+      <div id="service-list" class="list"><div class="empty">Nenhum serviço cadastrado.</div></div>
+    </section>
+
+    <!-- RELATÓRIOS -->
+    <section id="relatorios">
+      <h2>Resumo Financeiro</h2>
+      <div class="kpi">
+        <div class="tile"><h3>A Receber</h3><p id="kpi-pending">R$ 0,00</p></div>
+        <div class="tile"><h3>Recebido</h3><p id="kpi-paid">R$ 0,00</p></div>
+        <div class="tile"><h3>Créditos</h3><p id="kpi-credit">R$ 0,00</p></div>
+        <div class="tile"><h3>Este Mês</h3><p id="kpi-month">R$ 0,00</p></div>
+      </div>
+      
+      <h2>Exportar Dados</h2>
+      <div class="card">
+        <p style="margin-top: 0;">Faça backup dos seus dados para não perdê-los.</p>
+        <div class="actions">
+          <button id="btn-export" class="clean">Exportar</button>
+          <button id="btn-import">Importar</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- MODAL ATENDIMENTO -->
+  <div id="modal-atendimento" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h3 id="modal-title">Atendimento</h3>
+        <button class="modal-close" type="button" aria-label="Fechar">×</button>
+      </div>
+      <form id="f-service">
+        <input type="hidden" id="modal-client-id" />
+        <div class="card"><label style="color:#666">Data</label><input id="in-date" type="date" required /></div>
+        <div class="card"><div style="color:#666;margin-bottom:6px">Serviços</div><div id="opts"></div></div>
+        <div class="card"><label style="color:#666">Adicionar crédito (opcional)</label><input id="in-credit" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Ex: 20,00" /></div>
+        <div class="card"><label><input id="in-paid" type="checkbox" /> Marcar como pago</label></div>
+        <div class="card">
+          <div class="row" style="justify-content:space-between; padding: 0 8px;"><div>Total selecionado</div><div><strong id="sum">R$ 0,00</strong></div></div>
+          <button type="submit" class="ok" id="btn-save-service"></button>
+          <button type="button" class="clean" id="bt-cancel-atendimento">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DIÁLOGO GENÉRICO -->
+  <div id="modal-dialogo" class="modal" aria-hidden="true">
+      <div class="modal-content">
+          <div class="modal-head">
+              <h3 id="dialog-title"></h3>
+              <button class="modal-close" type="button" aria-label="Fechar">×</button>
+          </div>
+          <p id="dialog-message" style="margin: 8px 0 16px; color: var(--muted);"></p>
+          <div id="dialog-inputs"></div>
+          <div id="dialog-buttons" class="row"></div>
+      </div>
+  </div>
+
+  <!-- TOAST / NOTIFICAÇÃO -->
+  <div id="toast" class="toast"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ===== Ícones SVG ===== */
+  const ICONS = {
+    add: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>`,
+    check: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+    edit: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
+    trash: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
+    user: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+  };
+
+  /* ===== Utils essenciais ===== */
+  const fmtBRL = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+  const toBRL = v => fmtBRL.format(Number.isFinite(+v)? +v : 0);
+  const todayISO = () => new Date().toISOString().split('T')[0];
+  const uid = () => (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(16).slice(2));
+  const $ = id => document.getElementById(id);
+  const escapeHTML = s => String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
+
+  /* ===== Storage com debounce (menos I/O) ===== */
+  let saveTimer=null;
+  const storage = {
+    get(key, fallback) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : JSON.parse(JSON.stringify(fallback));
+      } catch (e) {
+        console.error(`Erro ao ler dados para a chave "${key}", usando dados padrão.`, e);
+        return JSON.parse(JSON.stringify(fallback));
+      }
+    },
+    set(key, val){
+      try{
+        const data = JSON.stringify(val);
+        if (saveTimer) clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          localStorage.setItem(key, data);
+          saveTimer = null;
+        }, 300);
+        return true;
+      }catch(e){ showToast('Não foi possível salvar os dados.'); return false; }
+    }
+  };
+
+  /* ===== UI: Toast & Dialog ===== */
+  let toastTimer = null;
+  function showToast(message) {
+    const el = $('toast');
+    el.textContent = message;
+    el.classList.add('show');
+    if(toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  function showDialog(opts) {
+    return new Promise(resolve => {
+        const modal = $('modal-dialogo');
+        $('dialog-title').textContent = opts.title || '';
+        $('dialog-message').textContent = opts.message || '';
+
+        const inputsWrap = $('dialog-inputs');
+        inputsWrap.innerHTML = (opts.inputs || []).map(i => `
+            <label style="color:#666; font-size: 0.9rem">${escapeHTML(i.label)}</label>
+            <input type="${i.type || 'text'}" id="dialog-input-${i.id}" placeholder="${escapeHTML(i.placeholder || '')}" value="${escapeHTML(i.value || '')}" />
+        `).join('');
+
+        const buttonsWrap = $('dialog-buttons');
+        buttonsWrap.innerHTML = (opts.buttons || []).map(b => `
+            <button class="${b.class || ''}" data-value="${escapeHTML(b.value)}">${b.icon ? b.icon : ''} ${escapeHTML(b.label)}</button>
+        `).join('');
+
+        const onAction = (value) => {
+            modal.classList.remove('show');
+            buttonsWrap.removeEventListener('click', clickHandler);
+            closeBtn.removeEventListener('click', closeHandler);
+            modal.removeEventListener('click', modalClickHandler);
+            const results = (opts.inputs || []).reduce((acc, i) => {
+                acc[i.id] = $(`dialog-input-${i.id}`).value;
+                return acc;
+            }, {});
+            resolve({ value, inputs: results });
+        };
+
+        const clickHandler = e => { e.stopPropagation(); const btn = e.target.closest('button'); if (btn) onAction(btn.dataset.value); };
+        const closeBtn = modal.querySelector('.modal-close');
+        const closeHandler = () => onAction(null);
+        const modalClickHandler = e => { if (e.target === modal) onAction(null); };
+
+        buttonsWrap.addEventListener('click', clickHandler);
+        closeBtn.addEventListener('click', closeHandler);
+        modal.addEventListener('click', modalClickHandler);
+        modal.classList.add('show');
+    });
+  }
+
+  /* ===== Estado + migração mínima ===== */
+  const DEFAULT_SERVICES = [
+    { id: uid(), name:'Mão', price:25 },
+    { id: uid(), name:'Pé',  price:30 },
+    { id: uid(), name:'Esmaltação', price:10 }
+  ];
+  let clients = [];
+  let services = [];
+
+  function migrate(){
+    try {
+      let loadedServices = storage.get('services', DEFAULT_SERVICES);
+      services = (Array.isArray(loadedServices)? loadedServices:[]).map(s=>({
+        id: s.id || uid(), name: String(s.name||'').trim(), price: Number.isFinite(+s.price)? +s.price : 0
+      })).filter(s=>s.name);
+
+      let loadedClients = storage.get('clients', []);
+      clients = (Array.isArray(loadedClients)? loadedClients:[]).map(c=>{
+        const svcArr = Array.isArray(c.services)? c.services : [];
+        return {
+          id: c.id || uid(), name: String(c.name||'').trim() || 'Sem nome', credit: Number.isFinite(+c.credit)? +c.credit : 0,
+          services: svcArr.map(s=>{
+            const items = Array.isArray(s.services_provided)? s.services_provided.map(it=>{
+              // Correção de compatibilidade: Removido optional chaining (?.)
+              const name = (it && it.name) ? String(it.name).trim() : '';
+              const price = (it && Number.isFinite(+it.price)) ? +it.price : 0;
+              return { name: name, price: price };
+            }).filter(it=>it.name):[];
+            const total = Number.isFinite(+s.totalValue)? +s.totalValue : items.reduce((a,b)=>a+(+b.price||0),0);
+            return { date: s.date || todayISO(), services_provided: items, totalValue: total, paid: !!s.paid };
+          })
+        };
+      });
+      storage.set('services', services); storage.set('clients', clients);
+    } catch(e) {
+      console.error("Falha crítica na migração de dados. Usando dados padrão.", e);
+      // Em caso de falha, reseta para os padrões para garantir que o app inicie
+      clients = [];
+      services = DEFAULT_SERVICES;
+      showToast("Erro ao carregar dados. Verifique o console.");
+    }
+  }
+  
+  /* ===== Render Functions ===== */
+  function renderClients(){
+    const wrap = $('client-list');
+    if(!clients.length){ wrap.innerHTML = `<div class="empty">Nenhum cliente cadastrado.</div>`; return; }
+    wrap.innerHTML = clients.sort((a,b) => a.name.localeCompare(b.name)).map(c=>{
+      const pend = (c.services||[]).reduce((acc,s)=> acc + (!s.paid ? (+s.totalValue||0) : 0), 0);
+      return `
+        <div class="card client">
+          <div class="name" style="display:flex; align-items:center; gap:8px;">${ICONS.user} ${escapeHTML(c.name)}</div>
+          <div class="meta">A receber: <strong>${toBRL(pend)}</strong></div>
+          <div class="meta">Crédito: <strong>${toBRL(c.credit||0)}</strong></div>
+          <div class="actions">
+            <button data-action="attend" data-id="${c.id}">${ICONS.add} Atendimento</button>
+            <button class="ok" data-action="confirm" data-id="${c.id}" ${pend <= 0 ? 'disabled' : ''}>${ICONS.check} Quitar Saldo</button>
+            <button class="clean" data-action="rename" data-id="${c.id}">${ICONS.edit} Renomear</button>
+            <button class="danger" data-action="delete" data-id="${c.id}">${ICONS.trash} Excluir</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderServices(){
+    const wrap = $('service-list');
+    if(!services.length){ wrap.innerHTML = `<div class="empty">Nenhum serviço cadastrado.</div>`; return; }
+    wrap.innerHTML = services.sort((a,b) => a.name.localeCompare(b.name)).map((s,i)=>`
+      <div class="card service-item">
+        <div class="info">
+          <strong>${escapeHTML(s.name)}</strong>
+          <div style="color:#666">${toBRL(s.price)}</div>
+        </div>
+        <div class="actions">
+          <button class="clean" data-action="edit-service" data-id="${s.id}">${ICONS.edit} Editar</button>
+          <button class="danger" data-action="del-service" data-id="${s.id}">${ICONS.trash} Excluir</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function renderReports(){
+    let pend=0, paid=0, credit=0, month=0;
+    const now = new Date(), m = now.getMonth(), y = now.getFullYear();
+    for(const c of clients){
+      credit += +c.credit||0;
+      for(const s of (c.services||[])){
+        const val = +s.totalValue||0;
+        if(s.paid) paid += val; else pend += val;
+        try {
+          // Validação robusta da data antes de usar
+          if(s.date && typeof s.date === 'string' && s.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            const d = new Date(s.date);
+            if(s.paid && d.getMonth()===m && d.getFullYear()===y) month += val;
+          }
+        } catch(e) { console.warn("Data de serviço inválida:", s.date) }
+      }
+    }
+    $('kpi-pending').textContent = toBRL(pend);
+    $('kpi-paid').textContent   = toBRL(paid);
+    $('kpi-credit').textContent  = toBRL(credit);
+    $('kpi-month').textContent   = toBRL(month);
+  }
+
+  /* ===== Modal Atendimento ===== */
+  const modalAtendimento = $('modal-atendimento'), optsWrap = $('opts'), sumEl = $('sum');
+  function openModalAtendimento(client){
+    if(!services.length){ showToast('Cadastre ao menos um serviço antes.'); switchTab('servicos'); return; }
+    $('modal-title').textContent = `Atendimento • ${client.name}`;
+    $('modal-client-id').value = client.id;
+    $('in-date').value = todayISO();
+    $('in-credit').value = ''; $('in-paid').checked = false; sumEl.textContent = toBRL(0);
+    optsWrap.innerHTML = services.map(s=>`
+      <label class="opt">
+        <input type="checkbox" data-price="${s.price}" data-name="${escapeHTML(s.name)}" />
+        <span>${escapeHTML(s.name)} — <span style="color:#666">${toBRL(s.price)}</span></span>
+      </label>`).join('');
+    modalAtendimento.classList.add('show'); modalAtendimento.setAttribute('aria-hidden','false');
+  }
+  function closeModalAtendimento(){ modalAtendimento.classList.remove('show'); modalAtendimento.setAttribute('aria-hidden','true'); }
+  $('bt-cancel-atendimento').addEventListener('click', closeModalAtendimento);
+  modalAtendimento.querySelector('.modal-close').addEventListener('click', closeModalAtendimento);
+  modalAtendimento.addEventListener('click', e=>{ if(e.target===modalAtendimento) closeModalAtendimento(); });
+  optsWrap.addEventListener('change', ()=>{
+    const total = [...optsWrap.querySelectorAll('input:checked')].reduce((a,el)=>a+(+el.dataset.price||0),0);
+    sumEl.textContent = toBRL(total);
+  });
+
+  /* ===== Navegação ===== */
+  document.querySelectorAll('.tab').forEach(btn=>{
+    btn.addEventListener('click', ()=> switchTab(btn.dataset.target));
+  });
+  function switchTab(id){
+   
