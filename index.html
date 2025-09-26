@@ -5,24 +5,19 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
 <title>Manicure - Clientes & Serviços</title>
 
-<!-- Meta tags otimizadas para PWA/APK -->
+<!-- Meta tags otimizadas para AppsGeyser -->
+<meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: gap: https://ssl.gstatic.com; style-src * 'unsafe-inline'; media-src *">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#d81b60">
-<meta name="description" content="Aplicativo para gestão de clientes e serviços de manicure">
-<meta name="keywords" content="manicure, beleza, clientes, serviços, agenda">
-
-<!-- Manifest para PWA -->
-<link rel="manifest" href="manifest.json">
 
 <!-- Ícone para AppsGeyser -->
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💅</text></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💅</text></svg>">
 
 <style>
   :root{
-    --rose:#d81b60; --rose-dark:#ad1457; --ok:#2e7d32; --bad:#c62828;
+    --rose:#d81b60; --rose-dark:#ad1457; --ok:#2e7d32; --bad:#c62828; --warning:#f57c00;
     --bg:#f0f2f5; --card:#fff; --text:#333; --muted:#666; --shadow:0 2px 8px rgba(0,0,0,.09);
     --safe-area-inset-top: env(safe-area-inset-top);
     --safe-area-inset-bottom: env(safe-area-inset-bottom);
@@ -99,6 +94,8 @@
   button:hover{background:var(--rose-dark)}
   button.clean{background:var(--card);color:var(--rose);border:1px solid var(--rose)}
   button.clean:hover{background:#fdecf4}
+  button.warning{background:var(--warning);color:#fff}
+  button.warning:hover{background:#e65100}
   button:active{transform: scale(0.98); opacity: 0.9;}
   button:disabled { opacity: 0.6; cursor: not-allowed; }
   button svg { width: 1em; height: 1em; }
@@ -127,7 +124,7 @@
   .tile h3{margin:0 0 6px;color:var(--muted);font-size:.9rem;font-weight:600}
   .tile p{margin:0;font-size:1.2rem;font-weight:800;color:var(--rose)}
   .empty{padding:16px;text-align:center;color:var(--muted);background:var(--card);border-radius:12px;}
-  .ok{background:var(--ok)!important} .danger{background:var(--bad)!important}
+  .ok{background:var(--ok)!important} .danger{background:var(--bad)!important} .warning{background:var(--warning)!important}
 
   .modal{
     position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:flex-end;
@@ -199,11 +196,6 @@
     text-decoration: none;
     color: #333;
     font-weight: 500;
-    width: 100%;
-    text-align: left;
-    background: none;
-    border: none;
-    cursor: pointer;
   }
   .menu-header {
     padding: 15px 10px;
@@ -212,6 +204,23 @@
     border-bottom: 2px solid var(--rose);
     margin-bottom: 10px;
   }
+
+  /* Detalhes do cliente */
+  .client-details { margin-top: 16px; }
+  .service-history { margin-top: 12px; }
+  .history-item {
+    padding: 10px;
+    border-left: 3px solid var(--rose);
+    background: #f9f9f9;
+    margin-bottom: 8px;
+    border-radius: 0 8px 8px 0;
+  }
+  .history-item.paid { border-left-color: var(--ok); }
+  .history-item.pending { border-left-color: var(--warning); }
+  .history-date { font-weight: bold; color: var(--muted); font-size: 0.9rem; }
+  .history-services { margin: 5px 0; }
+  .history-service { display: flex; justify-content: space-between; padding: 2px 0; }
+  .history-total { font-weight: bold; border-top: 1px dashed #ddd; padding-top: 5px; margin-top: 5px; }
 
   /* Melhorias para inputs em mobile */
   input[type="date"] {
@@ -261,36 +270,6 @@
   .hamburger span:nth-child(1) { top: 0px; }
   .hamburger span:nth-child(2) { top: 8px; }
   .hamburger span:nth-child(3) { top: 16px; }
-
-  /* Loading dentro dos botões */
-  .button-loading {
-    pointer-events: none;
-    opacity: 0.7;
-  }
-  .button-loading::after {
-    content: '';
-    width: 16px;
-    height: 16px;
-    border: 2px solid transparent;
-    border-top: 2px solid currentColor;
-    border-radius: 50%;
-    animation: buttonSpin 1s linear infinite;
-    margin-left: 8px;
-  }
-  @keyframes buttonSpin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-
-  /* Badge para notificações */
-  .badge {
-    background: var(--rose);
-    color: white;
-    border-radius: 10px;
-    padding: 2px 6px;
-    font-size: 0.7rem;
-    margin-left: 5px;
-  }
 </style>
 </head>
 <body>
@@ -304,32 +283,27 @@
         <span></span>
       </div>
     </button>
-    💅 Manicure Pro
+    💅 Manicure
   </header>
 
   <!-- Menu lateral -->
   <div class="side-menu" id="side-menu">
     <div class="menu-header">Navegação</div>
-    <button class="menu-item tab active" data-target="clientes">👥 Clientes</button>
-    <button class="menu-item tab" data-target="servicos">💅 Serviços</button>
-    <button class="menu-item tab" data-target="relatorios">📊 Relatórios</button>
-    <div class="menu-header">Ações Rápidas</div>
-    <button class="menu-item" id="quick-service">➕ Novo Atendimento</button>
-    <button class="menu-item" id="quick-client">👤 Novo Cliente</button>
-    <div class="menu-header">Dados & Backup</div>
-    <button class="menu-item" id="export-data">📤 Exportar Dados</button>
-    <button class="menu-item" id="import-data">📥 Importar Dados</button>
-    <button class="menu-item" id="backup-now">💾 Backup Agora</button>
-    <button class="menu-item" id="reset-data">🔄 Limpar Dados</button>
-    <div class="menu-header">Sobre</div>
-    <button class="menu-item" id="app-info">ℹ️ Sobre o App</button>
+    <button class="menu-item tab active" data-target="clientes">Clientes</button>
+    <button class="menu-item tab" data-target="servicos">Serviços</button>
+    <button class="menu-item tab" data-target="relatorios">Relatórios</button>
+    <div class="menu-header">Ações</div>
+    <button class="menu-item" id="export-data">Exportar Dados</button>
+    <button class="menu-item" id="import-data">Importar Dados</button>
+    <button class="menu-item" id="backup-now">Fazer Backup</button>
+    <button class="menu-item" id="clear-data">Limpar Dados</button>
   </div>
   <div class="overlay" id="overlay"></div>
 
   <nav>
-    <button class="tab active" data-target="clientes">👥 Clientes</button>
-    <button class="tab" data-target="servicos">💅 Serviços</button>
-    <button class="tab" data-target="relatorios">📊 Relatórios</button>
+    <button class="tab active" data-target="clientes">Clientes</button>
+    <button class="tab" data-target="servicos">Serviços</button>
+    <button class="tab" data-target="relatorios">Relatórios</button>
   </nav>
 
   <main>
@@ -341,14 +315,10 @@
           <input id="in-client-name" type="text" placeholder="Nome do cliente" required />
           <input id="in-client-phone" type="tel" placeholder="Telefone (opcional)" />
         </div>
-        <div class="row"><button type="submit" id="btn-add-client"></button></div>
+        <div class="row"><button type="submit" id="btn-add-client">Adicionar Cliente</button></div>
       </form>
 
-      <div class="row">
-        <input type="text" id="search-client" placeholder="🔍 Buscar cliente..." />
-      </div>
-
-      <h2>Lista de Clientes <span class="badge" id="client-count">0</span></h2>
+      <h2>Lista de Clientes</h2>
       <div id="client-list" class="list"><div class="empty">Nenhum cliente cadastrado.</div></div>
     </section>
 
@@ -360,10 +330,10 @@
           <input id="in-service-name" type="text" placeholder="Nome do serviço (ex: Mão)" required />
           <input id="in-service-price" type="number" inputmode="decimal" placeholder="Preço (R$)" step="0.01" min="0" required />
         </div>
-        <div class="row"><button type="submit" id="btn-add-service"></button></div>
+        <div class="row"><button type="submit" id="btn-add-service">Adicionar Serviço</button></div>
       </form>
 
-      <h2>Serviços Cadastrados <span class="badge" id="service-count">0</span></h2>
+      <h2>Serviços Cadastrados</h2>
       <div id="service-list" class="list"><div class="empty">Nenhum serviço cadastrado.</div></div>
     </section>
 
@@ -376,26 +346,17 @@
         <div class="tile"><h3>Créditos</h3><p id="kpi-credit">R$ 0,00</p></div>
         <div class="tile"><h3>Este Mês</h3><p id="kpi-month">R$ 0,00</p></div>
       </div>
-
-      <h2>Estatísticas</h2>
-      <div class="card">
-        <div class="row">
-          <div class="tile"><h3>Total Clientes</h3><p id="stat-clients">0</p></div>
-          <div class="tile"><h3>Serviços Hoje</h3><p id="stat-today">0</p></div>
-        </div>
-        <div class="row">
-          <div class="tile"><h3>Serviços Mês</h3><p id="stat-month">0</p></div>
-          <div class="tile"><h3>Faturamento</h3><p id="stat-revenue">R$ 0,00</p></div>
-        </div>
-      </div>
       
-      <h2>Backup & Restauração</h2>
+      <h2>Clientes com Pendências</h2>
+      <div id="pending-clients" class="list"></div>
+      
+      <h2>Exportar Dados</h2>
       <div class="card">
         <p style="margin-top: 0;">Faça backup dos seus dados para não perdê-los.</p>
         <div class="actions">
-          <button id="btn-export" class="clean">📤 Exportar Tudo</button>
-          <button id="btn-import">📥 Importar</button>
-          <button id="btn-print" class="clean">🖨️ Imprimir Relatório</button>
+          <button id="btn-export" class="clean">Exportar Backup</button>
+          <button id="btn-import">Importar Backup</button>
+          <button id="btn-print-report" class="warning">Imprimir Relatório</button>
         </div>
       </div>
     </section>
@@ -410,25 +371,32 @@
       </div>
       <form id="f-service">
         <input type="hidden" id="modal-client-id" />
-        <div class="card">
-          <label style="color:#666">Cliente</label>
-          <select id="select-client" required>
-            <option value="">Selecione um cliente</option>
-          </select>
-        </div>
         <div class="card"><label style="color:#666">Data</label><input id="in-date" type="date" required /></div>
         <div class="card"><div style="color:#666;margin-bottom:6px">Serviços</div><div id="opts"></div></div>
         <div class="card"><label style="color:#666">Adicionar crédito (opcional)</label><input id="in-credit" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Ex: 20,00" /></div>
         <div class="card"><label><input id="in-paid" type="checkbox" /> Marcar como pago</label></div>
         <div class="card">
-          <div class="row" style="justify-content:space-between; padding: 0 8px;">
-            <div>Total selecionado</div>
-            <div><strong id="sum">R$ 0,00</strong></div>
+          <div class="row" style="justify-content:space-between; padding: 0 8px;"><div>Total selecionado</div><div><strong id="sum">R$ 0,00</strong></div></div>
+          <div id="credit-info" style="display:none; background:#e8f5e9; padding:8px; border-radius:6px; margin:8px 0;">
+            <small>Crédito disponível: <span id="available-credit">R$ 0,00</span>. O valor será debitado automaticamente.</small>
           </div>
-          <button type="submit" class="ok" id="btn-save-service"></button>
+          <button type="submit" class="ok" id="btn-save-service">Salvar Atendimento</button>
           <button type="button" class="clean" id="bt-cancel-atendimento">Cancelar</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL DETALHES CLIENTE -->
+  <div id="modal-detalhes-cliente" class="modal" aria-hidden="true">
+    <div class="modal-content">
+      <div class="modal-head">
+        <h3 id="detalhes-cliente-title">Detalhes do Cliente</h3>
+        <button class="modal-close" type="button" aria-label="Fechar">×</button>
+      </div>
+      <div id="detalhes-cliente-content">
+        <!-- Conteúdo será preenchido dinamicamente -->
+      </div>
     </div>
   </div>
 
@@ -452,13 +420,42 @@
 (function(){
   "use strict";
 
-  // ===== CONFIGURAÇÃO DO APP =====
-  const APP_CONFIG = {
-    name: "Manicure Pro",
-    version: "2.0.0",
-    storageKey: "manicure_app_data",
-    backupInterval: 24 * 60 * 60 * 1000 // 24 horas
-  };
+  // ===== CORREÇÃO APPSGEYSER - PREVENÇÃO DE LOOP =====
+  console.log('=== APPSGEYSER MODE ===');
+  
+  // Prevenção de comportamentos problemáticos no WebView
+  if (window.location.protocol !== 'file:') {
+    // Modo WebView - aplica correções específicas
+    document.addEventListener('DOMContentLoaded', function() {
+      // Remove qualquer redirecionamento problemático
+      if (window.history && window.history.replaceState) {
+        try {
+          window.history.replaceState(null, null, window.location.href);
+        } catch(e) { console.log('History replace não suportado'); }
+      }
+      
+      // Previne reloads acidentais
+      window.onbeforeunload = null;
+      
+      // Força o carregamento completo
+      setTimeout(function() {
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(function() {
+          document.getElementById('loader').style.display = 'none';
+        }, 300);
+      }, 800);
+    });
+  } else {
+    // Modo local file:// - comportamento normal
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        document.getElementById('loader').style.opacity = '0';
+        setTimeout(function() {
+          document.getElementById('loader').style.display = 'none';
+        }, 300);
+      }, 800);
+    });
+  }
 
   /* ===== Ícones SVG ===== */
   const ICONS = {
@@ -466,61 +463,22 @@
     check: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
     edit: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>`,
     trash: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>`,
-    user: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`
+    user: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>`,
+    eye: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+    credit: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>`
   };
 
   /* ===== Utils essenciais ===== */
   const fmtBRL = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
   const toBRL = v => fmtBRL.format(Number.isFinite(+v)? +v : 0);
   const todayISO = () => new Date().toISOString().split('T')[0];
+  const formatDate = (dateStr) => {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('pt-BR');
+  };
   const uid = () => (crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now()+"-"+Math.random().toString(16).slice(2));
   const $ = id => document.getElementById(id);
   const escapeHTML = s => String(s).replace(/[&<>"']/g, m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;' }[m]));
-
-  // ===== SISTEMA DE BACKUP AUTOMÁTICO =====
-  const BackupSystem = {
-    lastBackup: localStorage.getItem('last_backup') || 0,
-    
-    checkAutoBackup() {
-      const now = Date.now();
-      if (now - this.lastBackup > APP_CONFIG.backupInterval) {
-        this.createBackup();
-        this.lastBackup = now;
-        localStorage.setItem('last_backup', now);
-      }
-    },
-    
-    createBackup() {
-      const data = {
-        clients: storage.get('clients', []),
-        services: storage.get('services', []),
-        timestamp: new Date().toISOString(),
-        version: APP_CONFIG.version
-      };
-      
-      try {
-        localStorage.setItem('auto_backup', JSON.stringify(data));
-        console.log('Backup automático criado');
-      } catch (e) {
-        console.error('Erro no backup automático:', e);
-      }
-    },
-    
-    restoreBackup() {
-      try {
-        const backup = localStorage.getItem('auto_backup');
-        if (backup) {
-          const data = JSON.parse(backup);
-          storage.set('clients', data.clients || []);
-          storage.set('services', data.services || []);
-          return true;
-        }
-      } catch (e) {
-        console.error('Erro ao restaurar backup:', e);
-      }
-      return false;
-    }
-  };
 
   /* ===== Storage com debounce (menos I/O) ===== */
   let saveTimer=null;
@@ -541,8 +499,6 @@
         saveTimer = setTimeout(() => {
           localStorage.setItem(key, data);
           saveTimer = null;
-          // Atualiza estatísticas
-          updateStats();
         }, 300);
         return true;
       }catch(e){ showToast('Não foi possível salvar os dados.'); return false; }
@@ -551,16 +507,12 @@
 
   /* ===== UI: Toast & Dialog ===== */
   let toastTimer = null;
-  function showToast(message, type = 'info') {
+  function showToast(message) {
     const el = $('toast');
     el.textContent = message;
-    el.className = 'toast'; // Reset classes
-    if (type === 'error') el.style.background = 'rgba(198, 40, 40, 0.9)';
-    else if (type === 'success') el.style.background = 'rgba(46, 125, 50, 0.9)';
-    
     el.classList.add('show');
     if(toastTimer) clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.remove('show'), 3000);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
   }
 
   function showDialog(opts) {
@@ -572,12 +524,12 @@
         const inputsWrap = $('dialog-inputs');
         inputsWrap.innerHTML = (opts.inputs || []).map(i => `
             <label style="color:#666; font-size: 0.9rem">${escapeHTML(i.label)}</label>
-            <input type="${i.type || 'text'}" id="dialog-input-${i.id}" placeholder="${escapeHTML(i.placeholder || '')}" value="${escapeHTML(i.value || '')}" ${i.required ? 'required' : ''} />
+            <input type="${i.type || 'text'}" id="dialog-input-${i.id}" placeholder="${escapeHTML(i.placeholder || '')}" value="${escapeHTML(i.value || '')}" />
         `).join('');
 
         const buttonsWrap = $('dialog-buttons');
         buttonsWrap.innerHTML = (opts.buttons || []).map(b => `
-            <button class="${b.class || ''}" data-value="${escapeHTML(b.value)}" ${b.disabled ? 'disabled' : ''}>${b.icon ? b.icon : ''} ${escapeHTML(b.label)}</button>
+            <button class="${b.class || ''}" data-value="${escapeHTML(b.value)}">${b.icon ? b.icon : ''} ${escapeHTML(b.label)}</button>
         `).join('');
 
         const onAction = (value) => {
@@ -592,11 +544,7 @@
             resolve({ value, inputs: results });
         };
 
-        const clickHandler = e => { 
-            e.stopPropagation(); 
-            const btn = e.target.closest('button'); 
-            if (btn && !btn.disabled) onAction(btn.dataset.value); 
-        };
+        const clickHandler = e => { e.stopPropagation(); const btn = e.target.closest('button'); if (btn) onAction(btn.dataset.value); };
         const closeBtn = modal.querySelector('.modal-close');
         const closeHandler = () => onAction(null);
         const modalClickHandler = e => { if (e.target === modal) onAction(null); };
@@ -605,180 +553,7 @@
         closeBtn.addEventListener('click', closeHandler);
         modal.addEventListener('click', modalClickHandler);
         modal.classList.add('show');
-        
-        // Foca no primeiro input se existir
-        const firstInput = inputsWrap.querySelector('input');
-        if (firstInput) firstInput.focus();
     });
-  }
-
-  // ===== FUNÇÕES DE EXPORTAÇÃO/IMPORTAÇÃO =====
-  function exportData() {
-    const data = {
-      clients: storage.get('clients', []),
-      services: storage.get('services', []),
-      exportDate: new Date().toISOString(),
-      app: APP_CONFIG.name,
-      version: APP_CONFIG.version
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup-manicure-${todayISO()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    
-    showToast('Dados exportados com sucesso!', 'success');
-  }
-
-  function importData(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        try {
-          const data = JSON.parse(e.target.result);
-          
-          // Validação básica dos dados
-          if (!data.clients || !data.services) {
-            throw new Error('Formato de arquivo inválido');
-          }
-          
-          // Backup antes da importação
-          const backup = {
-            clients: storage.get('clients', []),
-            services: storage.get('services', []),
-            timestamp: new Date().toISOString()
-          };
-          localStorage.setItem('pre_import_backup', JSON.stringify(backup));
-          
-          // Aplica os dados
-          storage.set('clients', data.clients);
-          storage.set('services', data.services);
-          
-          showToast('Dados importados com sucesso!', 'success');
-          resolve(data);
-        } catch (error) {
-          showToast('Erro ao importar arquivo: ' + error.message, 'error');
-          reject(error);
-        }
-      };
-      reader.readAsText(file);
-    });
-  }
-
-  // ===== SISTEMA DE RELATÓRIOS =====
-  function generateReport() {
-    const now = new Date();
-    const month = now.getMonth();
-    const year = now.getFullYear();
-    
-    let report = `RELATÓRIO MANICURE PRO\n`;
-    report += `Data: ${now.toLocaleDateString('pt-BR')}\n`;
-    report += `====================\n\n`;
-    
-    // Resumo financeiro
-    let pend = 0, paid = 0, credit = 0, monthRevenue = 0;
-    let todayServices = 0, monthServices = 0;
-    
-    clients.forEach(client => {
-      credit += client.credit || 0;
-      client.services.forEach(service => {
-        const val = service.totalValue || 0;
-        if (service.paid) paid += val; else pend += val;
-        
-        const serviceDate = new Date(service.date);
-        if (serviceDate.toDateString() === now.toDateString()) todayServices++;
-        if (serviceDate.getMonth() === month && serviceDate.getFullYear() === year) {
-          monthServices++;
-          if (service.paid) monthRevenue += val;
-        }
-      });
-    });
-    
-    report += `RESUMO FINANCEIRO:\n`;
-    report += `A Receber: ${toBRL(pend)}\n`;
-    report += `Recebido: ${toBRL(paid)}\n`;
-    report += `Créditos: ${toBRL(credit)}\n`;
-    report += `Este Mês: ${toBRL(monthRevenue)}\n\n`;
-    
-    report += `ESTATÍSTICAS:\n`;
-    report += `Total Clientes: ${clients.length}\n`;
-    report += `Serviços Hoje: ${todayServices}\n`;
-    report += `Serviços Este Mês: ${monthServices}\n\n`;
-    
-    // Clientes com pendências
-    const clientsWithDebt = clients.filter(c => 
-      c.services.some(s => !s.paid) || (c.credit || 0) > 0
-    );
-    
-    if (clientsWithDebt.length > 0) {
-      report += `CLIENTES COM PENDÊNCIAS:\n`;
-      clientsWithDebt.forEach(client => {
-        const debt = client.services.reduce((acc, s) => acc + (!s.paid ? s.totalValue : 0), 0);
-        report += `- ${client.name}: ${toBRL(debt)} ${client.credit ? `(Crédito: ${toBRL(client.credit)})` : ''}\n`;
-      });
-    }
-    
-    return report;
-  }
-
-  function printReport() {
-    const report = generateReport();
-    const printWindow = window.open('', '_blank');
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Relatório Manicure</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #d81b60; }
-            pre { white-space: pre-wrap; }
-          </style>
-        </head>
-        <body>
-          <h1>Relatório Manicure Pro</h1>
-          <pre>${report}</pre>
-          <script>
-            window.onload = function() { window.print(); }
-          <\/script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
-  }
-
-  // ===== ATUALIZAÇÃO DE ESTATÍSTICAS =====
-  function updateStats() {
-    // Atualiza contadores
-    $('client-count').textContent = clients.length;
-    $('service-count').textContent = services.length;
-    
-    // Atualiza estatísticas
-    const now = new Date();
-    const month = now.getMonth();
-    const year = now.getFullYear();
-    
-    let todayServices = 0, monthServices = 0, totalRevenue = 0;
-    
-    clients.forEach(client => {
-      client.services.forEach(service => {
-        const serviceDate = new Date(service.date);
-        if (serviceDate.toDateString() === now.toDateString()) todayServices++;
-        if (serviceDate.getMonth() === month && serviceDate.getFullYear() === year) {
-          monthServices++;
-          if (service.paid) totalRevenue += service.totalValue || 0;
-        }
-      });
-    });
-    
-    $('stat-clients').textContent = clients.length;
-    $('stat-today').textContent = todayServices;
-    $('stat-month').textContent = monthServices;
-    $('stat-revenue').textContent = toBRL(totalRevenue);
   }
 
   /* ===== Estado + migração mínima ===== */
@@ -787,7 +562,7 @@
     { id: uid(), name:'Pé',  price:30 },
     { id: uid(), name:'Esmaltação', price:10 },
     { id: uid(), name:'Mão e Pé', price:50 },
-    { id: uid(), name:'Manutenção', price:20 }
+    { id: uid(), name:'Alongamento', price:80 }
   ];
   let clients = [];
   let services = [];
@@ -814,71 +589,56 @@
               return { name: name, price: price };
             }).filter(it=>it.name):[];
             const total = Number.isFinite(+s.totalValue)? +s.totalValue : items.reduce((a,b)=>a+(+b.price||0),0);
+            const paid = !!s.paid;
+            const usedCredit = Number.isFinite(+s.usedCredit) ? +s.usedCredit : 0;
             return { 
+              id: s.id || uid(),
               date: s.date || todayISO(), 
               services_provided: items, 
               totalValue: total, 
-              paid: !!s.paid 
+              paid: paid,
+              usedCredit: usedCredit
             };
           })
         };
       });
       storage.set('services', services); 
       storage.set('clients', clients);
-      
-      // Verifica backup automático
-      BackupSystem.checkAutoBackup();
-      
     } catch(e) {
       console.error("Falha crítica na migração de dados. Usando dados padrão.", e);
-      // Tenta restaurar do backup automático
-      if (BackupSystem.restoreBackup()) {
-        showToast("Dados restaurados do backup automático.", "success");
-        migrate(); // Recarrega os dados restaurados
-      } else {
-        clients = [];
-        services = DEFAULT_SERVICES;
-        showToast("Erro ao carregar dados. Iniciando com dados padrão.", "error");
-      }
+      clients = [];
+      services = DEFAULT_SERVICES;
+      showToast("Erro ao carregar dados. Verifique o console.");
     }
   }
   
   /* ===== Render Functions ===== */
   function renderClients(){
     const wrap = $('client-list');
-    const searchTerm = ($('search-client')?.value || '').toLowerCase();
-    
-    let filteredClients = clients;
-    if (searchTerm) {
-      filteredClients = clients.filter(c => 
-        c.name.toLowerCase().includes(searchTerm) ||
-        (c.phone && c.phone.includes(searchTerm))
-      );
-    }
-    
-    if(!filteredClients.length){ 
-      wrap.innerHTML = `<div class="empty">${searchTerm ? 'Nenhum cliente encontrado' : 'Nenhum cliente cadastrado'}</div>`; 
+    if(!clients.length){ 
+      wrap.innerHTML = `<div class="empty">Nenhum cliente cadastrado.</div>`; 
       return; 
     }
     
-    wrap.innerHTML = filteredClients.sort((a,b) => a.name.localeCompare(b.name)).map(c=>{
+    wrap.innerHTML = clients.sort((a,b) => a.name.localeCompare(b.name)).map(c=>{
       const pend = (c.services||[]).reduce((acc,s)=> acc + (!s.paid ? (+s.totalValue||0) : 0), 0);
-      const lastService = c.services.length > 0 ? 
-        new Date(c.services[c.services.length-1].date).toLocaleDateString('pt-BR') : 'Nunca';
+      const hasCredit = (c.credit || 0) > 0;
       
       return `
         <div class="card client">
           <div class="name" style="display:flex; align-items:center; gap:8px;">
             ${ICONS.user} ${escapeHTML(c.name)}
-            ${c.phone ? `<span style="margin-left:auto; font-size:0.8rem; color:var(--muted)">📞 ${escapeHTML(c.phone)}</span>` : ''}
+            ${hasCredit ? '<span style="color:var(--ok); font-size:0.8em;">(Crédito)</span>' : ''}
           </div>
+          ${c.phone ? `<div class="meta">Telefone: ${escapeHTML(c.phone)}</div>` : ''}
           <div class="meta">A receber: <strong>${toBRL(pend)}</strong></div>
           <div class="meta">Crédito: <strong>${toBRL(c.credit||0)}</strong></div>
-          <div class="meta">Último atendimento: <strong>${lastService}</strong></div>
           <div class="actions">
             <button data-action="attend" data-id="${c.id}">${ICONS.add} Atendimento</button>
+            <button data-action="view-details" data-id="${c.id}">${ICONS.eye} Detalhes</button>
             <button class="ok" data-action="confirm" data-id="${c.id}" ${pend <= 0 ? 'disabled' : ''}>${ICONS.check} Quitar Saldo</button>
-            <button class="clean" data-action="rename" data-id="${c.id}">${ICONS.edit} Editar</button>
+            <button class="warning" data-action="add-credit" data-id="${c.id}">${ICONS.credit} Adicionar Crédito</button>
+            <button class="clean" data-action="rename" data-id="${c.id}">${ICONS.edit} Renomear</button>
             <button class="danger" data-action="delete" data-id="${c.id}">${ICONS.trash} Excluir</button>
           </div>
         </div>`;
@@ -904,11 +664,18 @@
   function renderReports(){
     let pend=0, paid=0, credit=0, month=0;
     const now = new Date(), m = now.getMonth(), y = now.getFullYear();
+    const pendingClients = [];
+    
     for(const c of clients){
       credit += +c.credit||0;
+      let clientPending = 0;
+      
       for(const s of (c.services||[])){
         const val = +s.totalValue||0;
-        if(s.paid) paid += val; else pend += val;
+        if(s.paid) paid += val; else {
+          pend += val;
+          clientPending += val;
+        }
         try {
           if(s.date && typeof s.date === 'string' && s.date.match(/^\d{4}-\d{2}-\d{2}$/)) {
             const d = new Date(s.date);
@@ -916,72 +683,156 @@
           }
         } catch(e) { console.warn("Data de serviço inválida:", s.date) }
       }
+      
+      if (clientPending > 0) {
+        pendingClients.push({ name: c.name, amount: clientPending, credit: c.credit || 0 });
+      }
     }
+    
     $('kpi-pending').textContent = toBRL(pend);
     $('kpi-paid').textContent   = toBRL(paid);
     $('kpi-credit').textContent  = toBRL(credit);
     $('kpi-month').textContent   = toBRL(month);
     
-    updateStats();
-  }
-
-  // ===== SISTEMA DE BUSCA =====
-  function initSearch() {
-    const searchInput = $('search-client');
-    if (searchInput) {
-      let searchTimeout;
-      searchInput.addEventListener('input', function() {
-        clearTimeout(searchTimeout);
-        searchTimeout = setTimeout(() => {
-          renderClients();
-        }, 300);
-      });
+    // Renderizar clientes com pendências
+    const pendingWrap = $('pending-clients');
+    if (pendingClients.length === 0) {
+      pendingWrap.innerHTML = '<div class="empty">Nenhum cliente com pendências.</div>';
+    } else {
+      pendingWrap.innerHTML = pendingClients
+        .sort((a, b) => b.amount - a.amount)
+        .map(c => `
+          <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <strong>${escapeHTML(c.name)}</strong>
+                <div style="color:var(--muted); font-size:0.9rem;">Valor pendente: ${toBRL(c.amount)}</div>
+                ${c.credit > 0 ? `<div style="color:var(--ok); font-size:0.9rem;">Crédito: ${toBRL(c.credit)}</div>` : ''}
+              </div>
+              <button class="warning" data-action="view-details-from-report" data-client="${escapeHTML(c.name)}">Ver Detalhes</button>
+            </div>
+          </div>
+        `).join('');
     }
   }
+
+  /* ===== Modal Detalhes Cliente ===== */
+  function openClientDetails(clientId) {
+    const client = clients.find(c => c.id === clientId);
+    if (!client) return;
+    
+    const pend = (client.services||[]).reduce((acc,s)=> acc + (!s.paid ? (+s.totalValue||0) : 0), 0);
+    const paidServices = (client.services||[]).filter(s => s.paid);
+    const pendingServices = (client.services||[]).filter(s => !s.paid);
+    
+    $('detalhes-cliente-title').textContent = `Detalhes - ${client.name}`;
+    
+    let content = `
+      <div class="card">
+        <div class="client-info">
+          <div><strong>Nome:</strong> ${escapeHTML(client.name)}</div>
+          ${client.phone ? `<div><strong>Telefone:</strong> ${escapeHTML(client.phone)}</div>` : ''}
+          <div><strong>Crédito disponível:</strong> ${toBRL(client.credit || 0)}</div>
+          <div><strong>Total a receber:</strong> ${toBRL(pend)}</div>
+        </div>
+      </div>
+    `;
+    
+    if (pendingServices.length > 0) {
+      content += `
+        <div class="client-details">
+          <h4 style="color:var(--warning);">Serviços Pendentes</h4>
+          <div class="service-history">
+            ${pendingServices.map(s => `
+              <div class="history-item pending">
+                <div class="history-date">${formatDate(s.date)}</div>
+                <div class="history-services">
+                  ${s.services_provided.map(serv => `
+                    <div class="history-service">
+                      <span>${escapeHTML(serv.name)}</span>
+                      <span>${toBRL(serv.price)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="history-total">
+                  Total: ${toBRL(s.totalValue)} ${s.usedCredit > 0 ? `(Crédito usado: ${toBRL(s.usedCredit)})` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    if (paidServices.length > 0) {
+      content += `
+        <div class="client-details">
+          <h4 style="color:var(--ok);">Serviços Pagos</h4>
+          <div class="service-history">
+            ${paidServices.map(s => `
+              <div class="history-item paid">
+                <div class="history-date">${formatDate(s.date)}</div>
+                <div class="history-services">
+                  ${s.services_provided.map(serv => `
+                    <div class="history-service">
+                      <span>${escapeHTML(serv.name)}</span>
+                      <span>${toBRL(serv.price)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="history-total">
+                  Total: ${toBRL(s.totalValue)} ${s.usedCredit > 0 ? `(Crédito usado: ${toBRL(s.usedCredit)})` : ''}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+    
+    if (client.services.length === 0) {
+      content += `<div class="empty">Nenhum serviço registrado para este cliente.</div>`;
+    }
+    
+    $('detalhes-cliente-content').innerHTML = content;
+    $('modal-detalhes-cliente').classList.add('show');
+  }
+
+  function closeClientDetails() {
+    $('modal-detalhes-cliente').classList.remove('show');
+  }
+
+  $('modal-detalhes-cliente').querySelector('.modal-close').addEventListener('click', closeClientDetails);
+  $('modal-detalhes-cliente').addEventListener('click', e => { 
+    if(e.target === $('modal-detalhes-cliente')) closeClientDetails(); 
+  });
 
   /* ===== Modal Atendimento ===== */
   const modalAtendimento = $('modal-atendimento'), optsWrap = $('opts'), sumEl = $('sum');
-  
-  function updateClientSelect() {
-    const select = $('select-client');
-    select.innerHTML = '<option value="">Selecione um cliente</option>';
-    clients.sort((a,b) => a.name.localeCompare(b.name)).forEach(client => {
-      const option = document.createElement('option');
-      option.value = client.id;
-      option.textContent = client.name;
-      select.appendChild(option);
-    });
-  }
-  
-  function openModalAtendimento(client = null){
-    if(!services.length){ 
-      showToast('Cadastre ao menos um serviço antes.', 'error'); 
-      switchTab('servicos'); 
-      return; 
-    }
-    
-    updateClientSelect();
-    
-    if (client) {
-      $('select-client').value = client.id;
-      $('select-client').disabled = true;
-    } else {
-      $('select-client').disabled = false;
-    }
-    
-    $('modal-title').textContent = client ? `Atendimento • ${client.name}` : 'Novo Atendimento';
-    $('modal-client-id').value = client ? client.id : '';
+  function openModalAtendimento(client){
+    if(!services.length){ showToast('Cadastre ao menos um serviço antes.'); switchTab('servicos'); return; }
+    $('modal-title').textContent = `Atendimento • ${client.name}`;
+    $('modal-client-id').value = client.id;
     $('in-date').value = todayISO();
     $('in-credit').value = ''; 
     $('in-paid').checked = false; 
     sumEl.textContent = toBRL(0);
+    
+    // Mostrar informações de crédito se houver
+    const creditInfo = $('credit-info');
+    const availableCredit = $('available-credit');
+    if (client.credit > 0) {
+      availableCredit.textContent = toBRL(client.credit);
+      creditInfo.style.display = 'block';
+    } else {
+      creditInfo.style.display = 'none';
+    }
     
     optsWrap.innerHTML = services.map(s=>`
       <label class="opt">
         <input type="checkbox" data-price="${s.price}" data-name="${escapeHTML(s.name)}" />
         <span>${escapeHTML(s.name)} — <span style="color:#666">${toBRL(s.price)}</span></span>
       </label>`).join('');
-      
     modalAtendimento.classList.add('show'); 
     modalAtendimento.setAttribute('aria-hidden','false');
   }
@@ -991,10 +842,10 @@
     modalAtendimento.setAttribute('aria-hidden','true'); 
   }
   
-  // Event listeners do modal
   $('bt-cancel-atendimento').addEventListener('click', closeModalAtendimento);
   modalAtendimento.querySelector('.modal-close').addEventListener('click', closeModalAtendimento);
   modalAtendimento.addEventListener('click', e=>{ if(e.target===modalAtendimento) closeModalAtendimento(); });
+  
   optsWrap.addEventListener('change', ()=>{
     const total = [...optsWrap.querySelectorAll('input:checked')].reduce((a,el)=>a+(+el.dataset.price||0),0);
     sumEl.textContent = toBRL(total);
@@ -1006,395 +857,464 @@
   });
   
   function switchTab(id){
-    document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('active', b.dataset.target===id));
-    document.querySelectorAll('section').forEach(s=>s.classList.toggle('active', s.id===id));
+    document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    $(id).classList.add('active');
+    document.querySelectorAll(`.tab[data-target="${id}"]`).forEach(b=>b.classList.add('active'));
     
-    // Fecha o menu lateral se estiver aberto
+    // Fecha menu lateral se estiver aberto
     closeSideMenu();
     
-    if(id==='servicos') renderServices();
     if(id==='relatorios') renderReports();
-    if(id==='clientes') renderClients();
   }
 
-  // ===== MENU LATERAL =====
-  function initSideMenu() {
-    const menuToggle = $('menu-toggle');
-    const sideMenu = $('side-menu');
+  /* ===== Menu Lateral ===== */
+  function toggleSideMenu() {
+    const menu = $('side-menu');
     const overlay = $('overlay');
-    
-    function openSideMenu() {
-      sideMenu.classList.add('open');
+    if (menu.classList.contains('open')) {
+      closeSideMenu();
+    } else {
+      menu.classList.add('open');
       overlay.classList.add('show');
-      document.body.style.overflow = 'hidden';
     }
-    
-    function closeSideMenu() {
-      sideMenu.classList.remove('open');
-      overlay.classList.remove('show');
-      document.body.style.overflow = '';
-    }
-    
-    menuToggle.addEventListener('click', openSideMenu);
-    overlay.addEventListener('click', closeSideMenu);
-    
-    // Fecha menu ao clicar em um item
-    sideMenu.querySelectorAll('.menu-item').forEach(item => {
-      item.addEventListener('click', closeSideMenu);
-    });
-    
-    return { openSideMenu, closeSideMenu };
   }
 
-  const { closeSideMenu } = initSideMenu();
+  function closeSideMenu() {
+    $('side-menu').classList.remove('open');
+    $('overlay').classList.remove('show');
+  }
 
-  /* ===== Eventos: Clientes ===== */
-  $('f-add-client').addEventListener('submit', e=>{
+  $('menu-toggle').addEventListener('click', toggleSideMenu);
+  $('overlay').addEventListener('click', closeSideMenu);
+
+  /* ===== Event Listeners ===== */
+  $('f-add-client').addEventListener('submit', function(e){
     e.preventDefault();
-    const nameInput = $('in-client-name');
-    const phoneInput = $('in-client-phone');
-    const name = nameInput.value.trim();
-    const phone = phoneInput.value.trim();
+    const name = $('in-client-name').value.trim();
+    const phone = $('in-client-phone').value.trim();
     
-    if(!name){ showToast('Informe o nome do cliente.', 'error'); return; }
-    
-    // Verifica se cliente já existe
-    if(clients.some(c => c.name.toLowerCase() === name.toLowerCase())){
-      showToast('Já existe um cliente com este nome.', 'error');
-      return;
-    }
+    if(!name) return showToast('Digite um nome para o cliente.');
     
     clients.push({ id:uid(), name, phone, credit:0, services:[] });
     storage.set('clients', clients);
-    nameInput.value = '';
-    phoneInput.value = '';
-    nameInput.focus();
+    $('in-client-name').value = '';
+    $('in-client-phone').value = '';
     renderClients();
-    showToast('Cliente adicionado com sucesso!', 'success');
+    showToast('Cliente adicionado com sucesso!');
   });
 
-  $('client-list').addEventListener('click', async e=>{
-    const btn = e.target.closest('button'); 
-    if(!btn || btn.disabled) return;
-    
-    const id = btn.dataset.id; 
-    const act = btn.dataset.action;
-    const client = clients.find(c=> String(c.id)===String(id)); 
-    if(!client) return;
-
-    if(act==='attend'){ openModalAtendimento(client); return; }
-    
-    if(act==='confirm'){
-      const unpaidServices = (client.services||[]).filter(s => !s.paid);
-      const pend = unpaidServices.reduce((acc, s) => acc + (s.totalValue || 0), 0);
-      if (pend <= 0) { showToast('Sem atendimentos em aberto.', 'info'); return; }
-      
-      const creditUsed = Math.min(pend, client.credit || 0);
-      if (creditUsed > 0) { client.credit -= creditUsed; }
-      for(const s of unpaidServices){ s.paid = true; }
-      
-      storage.set('clients', clients);
-      renderClients();
-      let toastMessage = 'Saldo quitado com sucesso!';
-      if (creditUsed > 0) { 
-        toastMessage = `Saldo quitado! ${toBRL(creditUsed)} de crédito foram utilizados.`; 
-      }
-      showToast(toastMessage, 'success');
-      return;
-    }
-    
-    if(act==='rename'){
-      const res = await showDialog({
-        title: 'Renomear Cliente',
-        inputs: [
-          { id: 'name', label: 'Novo nome', value: client.name, required: true },
-          { id: 'phone', label: 'Telefone', value: client.phone || '' }
-        ],
-        buttons: [
-          { label: 'Cancelar', value: 'cancel' }, 
-          { label: 'Salvar', value: 'ok', class: 'ok', icon: ICONS.check }
-        ]
-      });
-      
-      if(res.value==='ok' && res.inputs.name.trim()){
-        client.name = res.inputs.name.trim(); 
-        client.phone = res.inputs.phone.trim();
-        storage.set('clients', clients); 
-        renderClients(); 
-        showToast('Cliente atualizado!', 'success');
-      }
-      return;
-    }
-    
-    if(act==='delete'){
-      const res = await showDialog({
-        title: 'Excluir Cliente',
-        message: `Tem certeza que deseja excluir "${client.name}" e todos os seus registros? Esta ação não pode ser desfeita.`,
-        buttons: [
-          { label: 'Cancelar', value: 'cancel' }, 
-          { label: 'Excluir', value: 'ok', class: 'danger', icon: ICONS.trash }
-        ]
-      });
-      
-      if(res.value==='ok'){
-        clients = clients.filter(c=> String(c.id)!==String(client.id));
-        storage.set('clients', clients); 
-        renderClients(); 
-        showToast('Cliente excluído.', 'success');
-      }
-      return;
-    }
-  });
-
-  /* ===== Eventos: Atendimentos (form do modal) ===== */
-  $('f-service').addEventListener('submit', e=>{
+  $('f-add-service').addEventListener('submit', function(e){
     e.preventDefault();
-    const clientId = $('modal-client-id').value || $('select-client').value;
-    const client = clients.find(c=> String(c.id)===String(clientId)); 
+    const name = $('in-service-name').value.trim();
+    const price = parseFloat($('in-service-price').value);
     
-    if(!client){ 
-      showToast('Selecione um cliente válido.', 'error'); 
-      return; 
-    }
+    if(!name) return showToast('Digite um nome para o serviço.');
+    if(!price || price <= 0) return showToast('Digite um preço válido.');
     
-    const date = $('in-date').value || todayISO();
-    const credit = +($('in-credit').value||0);
-    const paid = $('in-paid').checked;
-    const selected = [...optsWrap.querySelectorAll('input:checked')].map(el=>({ 
-      name: el.dataset.name, 
-      price:+el.dataset.price||0 
-    }));
-    const total = selected.reduce((a,b)=>a+(+b.price||0),0);
-
-    if(selected.length===0 && !(credit>0)){ 
-      showToast('Selecione ao menos um serviço ou informe um crédito.', 'error'); 
-      return; 
-    }
-    
-    if(credit>0) client.credit = (+client.credit||0) + credit;
-    if(selected.length>0) {
-      client.services.push({ 
-        date, 
-        services_provided:selected, 
-        totalValue:total, 
-        paid 
-      });
-    }
-
-    storage.set('clients', clients);
-    renderClients();
-    closeModalAtendimento();
-    showToast('Atendimento salvo!', 'success');
-  });
-
-  /* ===== Eventos: Serviços ===== */
-  $('f-add-service').addEventListener('submit', e=>{
-    e.preventDefault();
-    const nameInput = $('in-service-name');
-    const priceInput = $('in-service-price');
-    const name = nameInput.value.trim();
-    const price = +(priceInput.value||0);
-    
-    if(!name){ showToast('Nome do serviço é obrigatório.', 'error'); return; }
-    if(!(price>=0)){ showToast('Preço inválido.', 'error'); return; }
-
-    const existingService = services.find(s=> s.name.toLowerCase()===name.toLowerCase());
-    if(existingService){ 
-      existingService.price = price; 
-      showToast('Serviço atualizado com sucesso!', 'success');
-    } else{ 
-      services.push({ id:uid(), name, price }); 
-      showToast('Serviço adicionado com sucesso!', 'success');
-    }
-
+    services.push({ id:uid(), name, price });
     storage.set('services', services);
-    nameInput.value=''; 
-    priceInput.value='';
-    nameInput.focus();
+    $('in-service-name').value = '';
+    $('in-service-price').value = '';
     renderServices();
+    showToast('Serviço adicionado com sucesso!');
   });
 
-  $('service-list').addEventListener('click', async e=>{
-    const btn = e.target.closest('button'); 
+  $('f-service').addEventListener('submit', function(e){
+    e.preventDefault();
+    const clientId = $('modal-client-id').value;
+    const client = clients.find(c=>c.id===clientId);
+    if(!client) return showToast('Cliente não encontrado.');
+    
+    const selected = [...optsWrap.querySelectorAll('input:checked')].map(el=>({
+      name: el.dataset.name, price: +el.dataset.price
+    }));
+    
+    if(!selected.length) return showToast('Selecione ao menos um serviço.');
+    
+    const total = selected.reduce((a,s)=>a+s.price,0);
+    const creditToAdd = parseFloat($('in-credit').value) || 0;
+    const paid = $('in-paid').checked;
+    const date = $('in-date').value;
+    
+    // Calcular uso de crédito
+    let remainingCredit = client.credit || 0;
+    let usedCredit = 0;
+    
+    if (remainingCredit > 0 && !paid) {
+      usedCredit = Math.min(total, remainingCredit);
+      remainingCredit -= usedCredit;
+    }
+    
+    client.services.push({
+      id: uid(),
+      date, 
+      services_provided: selected, 
+      totalValue: total, 
+      paid: paid || usedCredit === total, // Marca como pago se o crédito cobrir totalmente
+      usedCredit: usedCredit
+    });
+    
+    // Atualizar crédito do cliente
+    client.credit = remainingCredit + creditToAdd;
+    
+    storage.set('clients', clients);
+    closeModalAtendimento();
+    renderClients();
+    
+    if (usedCredit > 0) {
+      showToast(`Atendimento registrado! Crédito usado: ${toBRL(usedCredit)}`);
+    } else {
+      showToast('Atendimento registrado com sucesso!');
+    }
+  });
+
+  // Event delegation para ações dinâmicas
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest('button');
     if(!btn) return;
     
-    const id = btn.dataset.id; 
-    const act = btn.dataset.action;
-    const service = services.find(s => s.id === id);
-    if(!service) return;
-
-    if(act==='edit-service'){
-      const res = await showDialog({
-        title: 'Editar Serviço',
-        inputs: [
-            { id: 'name', label: 'Nome do serviço', value: service.name, required: true },
-            { id: 'price', label: 'Preço (R$)', type: 'number', value: String(service.price), required: true }
-        ],
-        buttons: [
-          { label: 'Cancelar', value: 'cancel' }, 
-          { label: 'Salvar', value: 'ok', class: 'ok', icon: ICONS.check }
-        ]
-      });
-
-      const newName = res.inputs.name.trim();
-      const newPrice = +(res.inputs.price || '0');
-      
-      if (res.value === 'ok' && newName && newPrice >= 0) {
-        service.name = newName;
-        service.price = newPrice;
-        storage.set('services', services); 
-        renderServices(); 
-        showToast('Serviço atualizado!', 'success');
-      } else if (res.value === 'ok') {
-        showToast('Dados inválidos.', 'error');
-      }
-      return;
-    }
+    const action = btn.dataset.action;
+    const id = btn.dataset.id;
+    const clientName = btn.dataset.client;
     
-    if(act==='del-service'){
-      const res = await showDialog({
-        title: 'Excluir Serviço',
-        message: `Tem certeza que deseja excluir o serviço "${service.name}"?`,
+    if(action === 'attend'){
+      const client = clients.find(c=>c.id===id);
+      if(client) openModalAtendimento(client);
+    }
+    else if(action === 'view-details'){
+      openClientDetails(id);
+    }
+    else if(action === 'view-details-from-report'){
+      const client = clients.find(c => c.name === clientName);
+      if (client) openClientDetails(client.id);
+    }
+    else if(action === 'confirm'){
+      showDialog({
+        title: 'Quitar Saldo',
+        message: 'Deseja marcar todos os serviços como pagos?',
         buttons: [
-          { label: 'Cancelar', value: 'cancel' }, 
-          { label: 'Excluir', value: 'ok', class: 'danger', icon: ICONS.trash }
+          { label: 'Cancelar', value: false, class: 'clean' },
+          { label: 'Confirmar', value: true, class: 'ok' }
         ]
+      }).then(({value})=>{
+        if(value){
+          const client = clients.find(c=>c.id===id);
+          if(client){
+            client.services.forEach(s=>s.paid=true);
+            storage.set('clients', clients);
+            renderClients();
+            showToast('Saldo quitado com sucesso!');
+          }
+        }
       });
-      
-      if(res.value==='ok'){
-        services = services.filter(s => s.id !== id);
-        storage.set('services', services); 
-        renderServices(); 
-        showToast('Serviço excluído.', 'success');
+    }
+    else if(action === 'add-credit'){
+      const client = clients.find(c=>c.id===id);
+      if(client){
+        showDialog({
+          title: 'Adicionar Crédito',
+          message: `Adicionar crédito para ${client.name}`,
+          inputs: [
+            { id: 'amount', label: 'Valor R$:', type: 'number', placeholder: 'Ex: 50,00' }
+          ],
+          buttons: [
+            { label: 'Cancelar', value: false, class: 'clean' },
+            { label: 'Adicionar', value: true, class: 'ok' }
+          ]
+        }).then(({value, inputs})=>{
+          if(value){
+            const amount = parseFloat(inputs.amount);
+            if(amount && amount > 0){
+              client.credit = (client.credit || 0) + amount;
+              storage.set('clients', clients);
+              renderClients();
+              showToast(`Crédito de ${toBRL(amount)} adicionado com sucesso!`);
+            } else {
+              showToast('Digite um valor válido.');
+            }
+          }
+        });
       }
-      return;
+    }
+    else if(action === 'rename'){
+      const client = clients.find(c=>c.id===id);
+      if(client){
+        showDialog({
+          title: 'Renomear Cliente',
+          inputs: [
+            { id: 'name', label: 'Novo nome:', value: client.name },
+            { id: 'phone', label: 'Telefone:', value: client.phone || '' }
+          ],
+          buttons: [
+            { label: 'Cancelar', value: false, class: 'clean' },
+            { label: 'Salvar', value: true, class: 'ok' }
+          ]
+        }).then(({value, inputs})=>{
+          if(value && inputs.name.trim()){
+            client.name = inputs.name.trim();
+            client.phone = inputs.phone.trim();
+            storage.set('clients', clients);
+            renderClients();
+            showToast('Dados alterados com sucesso!');
+          }
+        });
+      }
+    }
+    else if(action === 'delete'){
+      const client = clients.find(c=>c.id===id);
+      if(client){
+        showDialog({
+          title: 'Excluir Cliente',
+          message: `Tem certeza que deseja excluir "${client.name}"? Esta ação não pode ser desfeita.`,
+          buttons: [
+            { label: 'Cancelar', value: false, class: 'clean' },
+            { label: 'Excluir', value: true, class: 'danger' }
+          ]
+        }).then(({value})=>{
+          if(value){
+            clients = clients.filter(c=>c.id!==id);
+            storage.set('clients', clients);
+            renderClients();
+            showToast('Cliente excluído com sucesso!');
+          }
+        });
+      }
+    }
+    else if(action === 'edit-service'){
+      const service = services.find(s=>s.id===id);
+      if(service){
+        showDialog({
+          title: 'Editar Serviço',
+          inputs: [
+            { id: 'name', label: 'Nome:', value: service.name },
+            { id: 'price', label: 'Preço R$:', value: service.price, type: 'number' }
+          ],
+          buttons: [
+            { label: 'Cancelar', value: false, class: 'clean' },
+            { label: 'Salvar', value: true, class: 'ok' }
+          ]
+        }).then(({value, inputs})=>{
+          if(value){
+            if(!inputs.name.trim()) return showToast('Digite um nome válido.');
+            const price = parseFloat(inputs.price);
+            if(!price || price <= 0) return showToast('Digite um preço válido.');
+            
+            service.name = inputs.name.trim();
+            service.price = price;
+            storage.set('services', services);
+            renderServices();
+            showToast('Serviço atualizado com sucesso!');
+          }
+        });
+      }
+    }
+    else if(action === 'del-service'){
+      const service = services.find(s=>s.id===id);
+      if(service){
+        showDialog({
+          title: 'Excluir Serviço',
+          message: `Tem certeza que deseja excluir "${service.name}"?`,
+          buttons: [
+            { label: 'Cancelar', value: false, class: 'clean' },
+            { label: 'Excluir', value: true, class: 'danger' }
+          ]
+        }).then(({value})=>{
+          if(value){
+            services = services.filter(s=>s.id!==id);
+            storage.set('services', services);
+            renderServices();
+            showToast('Serviço excluído com sucesso!');
+          }
+        });
+      }
     }
   });
 
-  // ===== EVENTOS DO MENU LATERAL =====
-  document.getElementById('quick-service').addEventListener('click', () => {
-    openModalAtendimento();
+  // Export/Import
+  $('btn-export').addEventListener('click', function(){
+    const data = { 
+      clients, 
+      services, 
+      exportDate: new Date().toISOString(),
+      version: '2.0'
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup-manicure-${todayISO()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Backup exportado com sucesso!');
   });
 
-  document.getElementById('quick-client').addEventListener('click', () => {
-    switchTab('clientes');
-    $('in-client-name').focus();
-  });
-
-  document.getElementById('export-data').addEventListener('click', exportData);
-
-  document.getElementById('import-data').addEventListener('click', () => {
+  $('btn-import').addEventListener('click', function(){
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.onchange = e => {
+    input.onchange = function(e){
       const file = e.target.files[0];
-      if (file) importData(file).then(() => {
-        migrate(); // Recarrega os dados
-        renderClients();
-        renderServices();
-        renderReports();
-      });
+      if(!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = function(e){
+        try {
+          const data = JSON.parse(e.target.result);
+          if(data.clients && data.services){
+            showDialog({
+              title: 'Importar Dados',
+              message: 'Esta ação substituirá todos os dados atuais. Continuar?',
+              buttons: [
+                { label: 'Cancelar', value: false, class: 'clean' },
+                { label: 'Importar', value: true, class: 'danger' }
+              ]
+            }).then(({value})=>{
+              if(value){
+                clients = data.clients;
+                services = data.services;
+                storage.set('clients', clients);
+                storage.set('services', services);
+                renderClients();
+                renderServices();
+                showToast('Dados importados com sucesso!');
+              }
+            });
+          } else {
+            showToast('Arquivo inválido.');
+          }
+        } catch(err) {
+          showToast('Erro ao ler arquivo.');
+        }
+      };
+      reader.readAsText(file);
     };
     input.click();
   });
 
-  document.getElementById('backup-now').addEventListener('click', () => {
-    BackupSystem.createBackup();
-    showToast('Backup criado com sucesso!', 'success');
-  });
-
-  document.getElementById('reset-data').addEventListener('click', async () => {
-    const res = await showDialog({
-      title: 'Limpar Todos os Dados',
-      message: '⚠️ ATENÇÃO: Esta ação irá apagar TODOS os clientes e serviços. Tem certeza?',
-      buttons: [
-        { label: 'Cancelar', value: 'cancel' },
-        { label: 'Limpar Tudo', value: 'ok', class: 'danger' }
-      ]
+  // Imprimir relatório
+  $('btn-print-report').addEventListener('click', function(){
+    const printWindow = window.open('', '_blank');
+    const now = new Date();
+    const reportDate = now.toLocaleDateString('pt-BR') + ' ' + now.toLocaleTimeString('pt-BR');
+    
+    let pend=0, paid=0, credit=0;
+    for(const c of clients){
+      credit += +c.credit||0;
+      for(const s of (c.services||[])){
+        const val = +s.totalValue||0;
+        if(s.paid) paid += val; else pend += val;
+      }
+    }
+    
+    const pendingClients = clients.filter(c => 
+      c.services.some(s => !s.paid)
+    ).map(c => {
+      const pendAmount = c.services.reduce((acc, s) => acc + (!s.paid ? (+s.totalValue||0) : 0), 0);
+      return { name: c.name, amount: pendAmount, credit: c.credit || 0 };
     });
     
-    if (res.value === 'ok') {
-      localStorage.clear();
-      showToast('Dados limpos. Recarregando...', 'success');
-      setTimeout(() => location.reload(), 1500);
-    }
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Relatório Manicure</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            h1 { color: #d81b60; }
+            .summary { background: #f5f5f5; padding: 15px; border-radius: 5px; margin-bottom: 20px; }
+            .client-list { margin-top: 20px; }
+            .client-item { border-bottom: 1px solid #ddd; padding: 10px 0; }
+            .credit { color: #2e7d32; }
+            .pending { color: #f57c00; }
+          </style>
+        </head>
+        <body>
+          <h1>💅 Relatório Manicure</h1>
+          <p><strong>Data do relatório:</strong> ${reportDate}</p>
+          
+          <div class="summary">
+            <h2>Resumo Financeiro</h2>
+            <p><strong>A Receber:</strong> R$ ${pend.toFixed(2)}</p>
+            <p><strong>Recebido:</strong> R$ ${paid.toFixed(2)}</p>
+            <p><strong>Créditos em conta:</strong> R$ ${credit.toFixed(2)}</p>
+            <p><strong>Total de clientes:</strong> ${clients.length}</p>
+          </div>
+          
+          <div class="client-list">
+            <h2>Clientes com Pendências (${pendingClients.length})</h2>
+            ${pendingClients.length > 0 ? 
+              pendingClients.map(c => `
+                <div class="client-item">
+                  <strong>${c.name}</strong><br>
+                  Valor pendente: R$ ${c.amount.toFixed(2)}
+                  ${c.credit > 0 ? `<br><span class="credit">Crédito disponível: R$ ${c.credit.toFixed(2)}</span>` : ''}
+                </div>
+              `).join('') : 
+              '<p>Nenhum cliente com pendências.</p>'
+            }
+          </div>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
+    printWindow.print();
   });
 
-  document.getElementById('app-info').addEventListener('click', () => {
+  // Menu lateral actions
+  $('export-data').addEventListener('click', function() {
+    closeSideMenu();
+    $('btn-export').click();
+  });
+
+  $('import-data').addEventListener('click', function() {
+    closeSideMenu();
+    $('btn-import').click();
+  });
+
+  $('backup-now').addEventListener('click', function() {
+    closeSideMenu();
+    $('btn-export').click();
+  });
+
+  $('clear-data').addEventListener('click', function() {
+    closeSideMenu();
     showDialog({
-      title: 'Sobre o App',
-      message: `${APP_CONFIG.name} v${APP_CONFIG.version}\n\nUm aplicativo simples e eficiente para gerenciar sua clientela de manicure.\n\nRecursos:\n• Cadastro de clientes e serviços\n• Controle financeiro\n• Backup automático\n• Relatórios detalhados`,
-      buttons: [{ label: 'Fechar', value: 'close', class: 'ok' }]
-    });
-  });
-
-  // ===== EVENTOS DE EXPORTAÇÃO/IMPORTAÇÃO =====
-  $('btn-export').addEventListener('click', exportData);
-
-  $('btn-import').addEventListener('click', () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = e => {
-      const file = e.target.files[0];
-      if (file) importData(file).then(() => {
-        migrate();
+      title: 'Limpar Todos os Dados',
+      message: 'Tem certeza que deseja apagar TODOS os dados? Esta ação não pode ser desfeita!',
+      buttons: [
+        { label: 'Cancelar', value: false, class: 'clean' },
+        { label: 'Limpar Tudo', value: true, class: 'danger' }
+      ]
+    }).then(({value}) => {
+      if (value) {
+        clients = [];
+        services = DEFAULT_SERVICES;
+        storage.set('clients', clients);
+        storage.set('services', services);
         renderClients();
         renderServices();
-        renderReports();
-      });
-    };
-    input.click();
-  });
-
-  $('btn-print').addEventListener('click', printReport);
-
-  // ===== SERVICE WORKER PARA PWA =====
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-      navigator.serviceWorker.register('/sw.js').then(function(registration) {
-        console.log('ServiceWorker registration successful');
-      }, function(err) {
-        console.log('ServiceWorker registration failed: ', err);
-      });
+        showToast('Todos os dados foram apagados!');
+      }
     });
-  }
-
-  // ===== PREVENÇÃO DE SAÍDA ACIDENTAL =====
-  window.addEventListener('beforeunload', function (e) {
-    // Apenas um aviso simples para evitar saída acidental
-    if (clients.length > 0) {
-      e.preventDefault();
-      e.returnValue = '';
-    }
   });
 
-  /* ===== Boot ===== */
-  function init() {
-    // Injeta os ícones nos botões estáticos
-    $('btn-add-client').innerHTML = `${ICONS.add} Adicionar Cliente`;
-    $('btn-add-service').innerHTML = `${ICONS.add} Adicionar ou Atualizar`;
-    $('btn-save-service').innerHTML = `${ICONS.check} Salvar atendimento`;
-    
+  /* ===== Inicialização ===== */
+  function init(){
     migrate();
     renderClients();
-    initSearch();
-
-    // Esconde a tela de carregamento
-    const loader = $('loader');
-    loader.style.opacity = '0';
-    setTimeout(() => loader.style.display = 'none', 300);
-
-    // Mostra mensagem de boas-vindas
-    setTimeout(() => {
-      if (clients.length === 0 && services.length === DEFAULT_SERVICES.length) {
-        showToast('Bem-vindo ao Manicure Pro! Comece cadastrando seus clientes.', 'success');
-      }
-    }, 1000);
+    renderServices();
+    
+    // Botões com texto
+    $('btn-add-client').innerHTML = `${ICONS.add} Adicionar Cliente`;
+    $('btn-add-service').innerHTML = `${ICONS.add} Adicionar Serviço`;
+    $('btn-save-service').innerHTML = `${ICONS.check} Salvar Atendimento`;
+    
+    // Debug info
+    console.log('App inicializado - Modo:', window.location.protocol);
   }
 
-  // Inicia o aplicativo
+  // Inicia quando o DOM estiver pronto
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
@@ -1405,3 +1325,5 @@
 </script>
 </body>
 </html>
+
+atualização
